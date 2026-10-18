@@ -1,0 +1,76 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "API dokumantasyonunu hazirla",
+      "description": "Tum CRUD endpoint'leri icin request/response ornekleri ekle.",
+      "status": "in-progress",
+      "priority": "high",
+      "assignee": "musa",
+      "project": "TaskFlow",
+      "dueDate": "2026-10-25",
+      "createdAt": "2026-10-12T08:15:00.000Z",
+      "updatedAt": "2026-10-16T10:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "Logger middleware gelistir",
+      "description": "HTTP metodu, endpoint ve zaman damgasini log dosyasina kaydet.",
+      "status": "completed",
+      "priority": "high",
+      "assignee": "ayse",
+      "project": "TaskFlow",
+      "dueDate": "2026-10-14",
+      "createdAt": "2026-10-11T09:00:00.000Z",
+      "updatedAt": "2026-10-14T16:45:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Routing yapisini kur",
+      "description": "Gorev ve rapor modulleri icin ayri router dosyalari olustur.",
+      "status": "completed",
+      "priority": "medium",
+      "assignee": "musa",
+      "project": "TaskFlow",
+      "dueDate": "2026-10-13",
+      "createdAt": "2026-10-11T09:20:00.000Z",
+      "updatedAt": "2026-10-13T12:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "title": "Validation middleware ekle",
+      "description": "title, description, priority ve assignee alanlarini dogrula.",
+      "status": "todo",
+      "priority": "medium",
+      "assignee": "burak",
+      "project": "TaskFlow",
+      "dueDate": "2026-10-22",
+      "createdAt": "2026-10-15T11:05:00.000Z",
+      "updatedAt": "2026-10-15T11:05:00.000Z"
+    },
+    {
+      "id": 5,
+      "title": "Postman testlerini tamamla",
+      "description": "Ekleme, listeleme, detay, guncelleme ve silme uclarinin ekran goruntulerini al.",
+      "status": "todo",
+      "priority": "low",
+      "assignee": "ayse",
+      "project": "TaskFlow",
+      "dueDate": "2026-10-28",
+      "createdAt": "2026-10-16T14:40:00.000Z",
+      "updatedAt": "2026-10-16T14:40:00.000Z"
+    },
+    {
+      "id": 6,
+      "title": "Raporlama servislerini gelistir",
+      "description": "Tamamlanan, bekleyen ve genel ozet raporlarini hazirla.",
+      "status": "in-progress",
+      "priority": "high",
+      "assignee": "burak",
+      "project": "TaskFlow",
+      "dueDate": "2026-10-24",
+      "createdAt": "2026-10-17T07:55:00.000Z",
+      "updatedAt": "2026-10-17T09:10:00.000Z"
+    }
+  ]
+}

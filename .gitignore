@@ -1,0 +1,17 @@
+# Bagimliliklar
+node_modules/
+
+# Ortam degiskenleri
+.env
+
+# Log dosyalari
+logs/
+*.log
+
+# Isletim sistemi dosyalari
+.DS_Store
+Thumbs.db
+
+# Editor ayarlari
+.vscode/
+.idea/

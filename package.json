@@ -1,0 +1,26 @@
+{
+  "name": "taskflow-api",
+  "version": "1.0.0",
+  "description": "TASKFLOW - Node.js ve Express.js ile gelistirilmis Gorev ve Proje Yonetim Sistemi REST API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "rest-api",
+    "task-management",
+    "crud"
+  ],
+  "author": "Samil",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
