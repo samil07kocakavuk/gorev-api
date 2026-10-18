@@ -1,165 +1,148 @@
 const config = require('../config');
-const {
-  readJson,
-  writeJsonAtomic,
-  withLock,
-} = require('../utils/fileStore');
+const { readJson, writeJsonAtomic, withLock } = require('../utils/fileStore');
 const HttpError = require('../utils/HttpError');
 
-/**
- * Gorev (task) verisi ile ilgili tum is mantigi.
- *
- * Depo formati:
- *   { "nextId": 7, "tasks": [ ... ] }
- *
- * nextId sayaci ayrica tutulur; boylece silinen bir gorevin ID'si
- * yeni goreve tekrar verilmez.
- */
+// data/tasks.json -> { nextId, tasks: [] }
+const EMPTY = { nextId: 1, tasks: [] };
 
-const DEFAULT_STORE = { nextId: 1, tasks: [] };
-
-function normalizeStore(store) {
+function normalize(store) {
   const tasks = Array.isArray(store && store.tasks) ? store.tasks : [];
-  const maxId = tasks.reduce((max, task) => Math.max(max, Number(task.id) || 0), 0);
+  const maxId = tasks.reduce((max, t) => Math.max(max, Number(t.id) || 0), 0);
+  const stored = Number(store && store.nextId);
 
-  const storedNextId = Number(store && store.nextId);
-  const nextId =
-    Number.isInteger(storedNextId) && storedNextId > maxId ? storedNextId : maxId + 1;
-
-  return { nextId, tasks };
+  return {
+    nextId: Number.isInteger(stored) && stored > maxId ? stored : maxId + 1,
+    tasks,
+  };
 }
 
-async function loadStore() {
-  return normalizeStore(await readJson(config.dataFile, DEFAULT_STORE));
+async function load() {
+  return normalize(await readJson(config.dataFile, EMPTY));
 }
 
-async function saveStore(store) {
+async function save(store) {
   await writeJsonAtomic(config.dataFile, store);
 }
 
-/**
- * Yazma islemlerini kilit altinda calistirir: oku -> degistir -> kaydet.
- */
+// Oku, degistir, yaz. Ayni dosyaya ayni anda iki yazma girmesin.
 function mutate(fn) {
   return withLock(config.dataFile, async () => {
-    const store = await loadStore();
+    const store = await load();
     const result = await fn(store);
-    await saveStore(store);
+    await save(store);
     return result;
   });
 }
 
-function normalize(value) {
-  return String(value).trim().toLowerCase();
-}
+const lower = (v) => String(v).trim().toLowerCase();
 
-/* ------------------------------ Okuma ------------------------------ */
-
-/**
- * Listeleme + filtreleme + arama + siralama + sayfalama.
- */
 async function list(query = {}) {
-  const { tasks } = await loadStore();
+  const { tasks } = await load();
   let result = [...tasks];
 
   if (query.status) {
-    const status = normalize(query.status);
-    result = result.filter((task) => normalize(task.status) === status);
+    const status = lower(query.status);
+    result = result.filter((t) => lower(t.status) === status);
   }
 
   if (query.priority) {
-    const priority = normalize(query.priority);
-    result = result.filter((task) => normalize(task.priority) === priority);
+    const priority = lower(query.priority);
+    result = result.filter((t) => lower(t.priority) === priority);
   }
 
   if (query.assignee) {
-    const assignee = normalize(query.assignee);
-    result = result.filter((task) => normalize(task.assignee) === assignee);
+    const assignee = lower(query.assignee);
+    result = result.filter((t) => lower(t.assignee) === assignee);
   }
 
   if (query.project) {
-    const project = normalize(query.project);
-    result = result.filter((task) => normalize(task.project) === project);
+    const project = lower(query.project);
+    result = result.filter((t) => lower(t.project) === project);
   }
 
   if (query.keyword) {
-    const keyword = normalize(query.keyword);
-    result = result.filter((task) =>
-      `${task.title} ${task.description || ''}`.toLowerCase().includes(keyword)
+    const keyword = lower(query.keyword);
+    result = result.filter((t) =>
+      `${t.title} ${t.description || ''}`.toLowerCase().includes(keyword)
     );
   }
 
-  // Siralama
-  const allowedSortFields = ['id', 'createdAt', 'updatedAt', 'priority', 'title', 'dueDate'];
-  let sortField = 'createdAt';
-  let descending = false;
+  // Sirala
+  const sortable = ['id', 'createdAt', 'updatedAt', 'priority', 'title', 'dueDate'];
+  let field = 'createdAt';
+  let desc = false;
 
   if (typeof query.sort === 'string') {
     const raw = query.sort.trim();
-    const desc = raw.startsWith('-');
-    const field = desc ? raw.slice(1) : raw;
+    const name = raw.startsWith('-') ? raw.slice(1) : raw;
 
-    if (allowedSortFields.includes(field)) {
-      sortField = field;
-      descending = desc;
+    if (sortable.includes(name)) {
+      field = name;
+      desc = raw.startsWith('-');
     }
   }
 
-  const priorityWeight = { high: 3, medium: 2, low: 1 };
+  const weight = { high: 3, medium: 2, low: 1 };
 
   result.sort((a, b) => {
-    let valueA = a[sortField];
-    let valueB = b[sortField];
+    let x = a[field];
+    let y = b[field];
 
-    if (sortField === 'priority') {
-      valueA = priorityWeight[normalize(valueA)] || 0;
-      valueB = priorityWeight[normalize(valueB)] || 0;
+    if (field === 'priority') {
+      x = weight[lower(x)] || 0;
+      y = weight[lower(y)] || 0;
     }
 
-    if (valueA === undefined || valueA === null) valueA = '';
-    if (valueB === undefined || valueB === null) valueB = '';
+    if (x === undefined || x === null) x = '';
+    if (y === undefined || y === null) y = '';
 
-    if (valueA < valueB) return descending ? 1 : -1;
-    if (valueA > valueB) return descending ? -1 : 1;
+    if (x < y) return desc ? 1 : -1;
+    if (x > y) return desc ? -1 : 1;
     return 0;
   });
 
-  // Sayfalama
+  // Sayfala
   const total = result.length;
-  const parsedPage = Number.parseInt(query.page, 10);
-  const parsedLimit = Number.parseInt(query.limit, 10);
+  const pageInput = Number.parseInt(query.page, 10);
+  const limitInput = Number.parseInt(query.limit, 10);
 
-  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const page = Number.isInteger(pageInput) && pageInput > 0 ? pageInput : 1;
   const limit =
-    Number.isInteger(parsedLimit) && parsedLimit > 0
-      ? Math.min(parsedLimit, 100)
+    Number.isInteger(limitInput) && limitInput > 0
+      ? Math.min(limitInput, 100)
       : total || 10;
 
-  const totalPages = Math.max(1, Math.ceil(total / limit));
   const start = (page - 1) * limit;
-  const data = result.slice(start, start + limit);
 
-  return { data, total, count: data.length, page, limit, totalPages };
+  return {
+    data: result.slice(start, start + limit),
+    total,
+    count: Math.min(limit, Math.max(0, total - start)),
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  };
+}
+
+function toId(id) {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new HttpError(404, `Gorev bulunamadi: id=${id}`);
+  }
+  return n;
 }
 
 async function getById(id) {
-  const numericId = Number(id);
-
-  if (!Number.isInteger(numericId) || numericId <= 0) {
-    throw new HttpError(404, `ID'si ${id} olan gorev bulunamadi.`);
-  }
-
-  const { tasks } = await loadStore();
-  const task = tasks.find((item) => item.id === numericId);
+  const numericId = toId(id);
+  const { tasks } = await load();
+  const task = tasks.find((t) => t.id === numericId);
 
   if (!task) {
-    throw new HttpError(404, `ID'si ${id} olan gorev bulunamadi.`);
+    throw new HttpError(404, `Gorev bulunamadi: id=${id}`);
   }
 
   return task;
 }
-
-/* ------------------------------ Yazma ------------------------------ */
 
 async function create(payload) {
   return mutate((store) => {
@@ -175,7 +158,7 @@ async function create(payload) {
       status: payload.status || 'todo',
       priority: payload.priority || 'medium',
       assignee: payload.assignee.trim(),
-      project: payload.project ? String(payload.project).trim() : 'TaskFlow',
+      project: payload.project ? String(payload.project).trim() : 'genel',
       dueDate: payload.dueDate || null,
       createdAt: now,
       updatedAt: now,
@@ -189,53 +172,38 @@ async function create(payload) {
 }
 
 async function update(id, payload) {
-  const numericId = Number(id);
-
-  if (!Number.isInteger(numericId) || numericId <= 0) {
-    throw new HttpError(404, `ID'si ${id} olan gorev bulunamadi.`);
-  }
+  const numericId = toId(id);
 
   return mutate((store) => {
-    const index = store.tasks.findIndex((item) => item.id === numericId);
+    const index = store.tasks.findIndex((t) => t.id === numericId);
 
     if (index === -1) {
-      throw new HttpError(404, `ID'si ${id} olan gorev bulunamadi.`);
+      throw new HttpError(404, `Gorev bulunamadi: id=${id}`);
     }
 
     const current = store.tasks[index];
-    const editableFields = [
-      'title',
-      'description',
-      'priority',
-      'status',
-      'assignee',
-      'project',
-      'dueDate',
-    ];
+    const fields = ['title', 'description', 'priority', 'status', 'assignee', 'project', 'dueDate'];
+    const changes = {};
 
-    const updates = {};
-
-    editableFields.forEach((field) => {
-      if (payload[field] === undefined) {
-        return;
-      }
+    fields.forEach((field) => {
+      if (payload[field] === undefined) return;
 
       const value = payload[field];
 
       if (field === 'dueDate') {
-        updates.dueDate = value ? String(value).trim() : null;
+        changes.dueDate = value ? String(value).trim() : null;
       } else if (value === null) {
-        updates[field] = '';
+        changes[field] = '';
       } else {
-        updates[field] = typeof value === 'string' ? value.trim() : value;
+        changes[field] = typeof value === 'string' ? value.trim() : value;
       }
     });
 
     const updated = {
       ...current,
-      ...updates,
-      id: current.id, // ID degistirilemez
-      createdAt: current.createdAt, // olusturma tarihi korunur
+      ...changes,
+      id: current.id,
+      createdAt: current.createdAt,
       updatedAt: new Date().toISOString(),
     };
 
@@ -246,63 +214,54 @@ async function update(id, payload) {
 }
 
 async function remove(id) {
-  const numericId = Number(id);
-
-  if (!Number.isInteger(numericId) || numericId <= 0) {
-    throw new HttpError(404, `ID'si ${id} olan gorev bulunamadi.`);
-  }
+  const numericId = toId(id);
 
   return mutate((store) => {
-    const index = store.tasks.findIndex((item) => item.id === numericId);
+    const index = store.tasks.findIndex((t) => t.id === numericId);
 
     if (index === -1) {
-      throw new HttpError(404, `ID'si ${id} olan gorev bulunamadi.`);
+      throw new HttpError(404, `Gorev bulunamadi: id=${id}`);
     }
 
     const [deleted] = store.tasks.splice(index, 1);
-
     return deleted;
   });
 }
 
-/* ----------------------------- Raporlama ---------------------------- */
-
 async function reportCompleted() {
-  const { tasks } = await loadStore();
-  const completed = tasks.filter((task) => task.status === 'completed');
+  const { tasks } = await load();
+  const completed = tasks.filter((t) => t.status === 'completed');
 
   return { count: completed.length, tasks: completed };
 }
 
 async function reportPending() {
-  const { tasks } = await loadStore();
-  const pending = tasks.filter((task) => task.status !== 'completed');
+  const { tasks } = await load();
+  const pending = tasks.filter((t) => t.status !== 'completed');
 
   return { count: pending.length, tasks: pending };
 }
 
 async function reportSummary() {
-  const { tasks } = await loadStore();
+  const { tasks } = await load();
 
-  const byStatus = (status) => tasks.filter((task) => task.status === status).length;
-  const byPriority = (priority) =>
-    tasks.filter((task) => task.priority === priority).length;
-
-  const assignees = [...new Set(tasks.map((task) => task.assignee))];
+  const countStatus = (s) => tasks.filter((t) => t.status === s).length;
+  const countPriority = (p) => tasks.filter((t) => t.priority === p).length;
+  const assignees = [...new Set(tasks.map((t) => t.assignee))];
 
   return {
     total: tasks.length,
-    completed: byStatus('completed'),
-    pending: byStatus('todo') + byStatus('in-progress'),
+    completed: countStatus('completed'),
+    pending: countStatus('todo') + countStatus('in-progress'),
     byStatus: {
-      todo: byStatus('todo'),
-      'in-progress': byStatus('in-progress'),
-      completed: byStatus('completed'),
+      todo: countStatus('todo'),
+      'in-progress': countStatus('in-progress'),
+      completed: countStatus('completed'),
     },
     byPriority: {
-      high: byPriority('high'),
-      medium: byPriority('medium'),
-      low: byPriority('low'),
+      high: countPriority('high'),
+      medium: countPriority('medium'),
+      low: countPriority('low'),
     },
     assignees,
     assigneeCount: assignees.length,

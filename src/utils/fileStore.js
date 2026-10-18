@@ -1,37 +1,27 @@
 const fs = require('fs/promises');
 const path = require('path');
+const config = require('../config');
 
-/**
- * JSON dosyasi uzerinden kalici veri deposu.
- *
- * Onemli garanti:
- *   - Yazma islemleri dosya bazinda kuyruga alinir (ayni anda tek yazma).
- *   - Yazma atomiktir: once gecici dosyaya yazilir, sonra rename ile
- *     gercek dosyanin uzerine tasinir. Boylece yarim yazilmis dosya okunmaz.
- *   - Bozuk JSON sessizce bos listeye cevrilmez; hata firlatilir.
- *     (Sessizce bosaltmak veri kaybina yol acar.)
- */
-
+// Yazma islemleri dosya bazinda siraya girsin diye kuyruk tutuyorum
 const queues = new Map();
 
-function delay(ms) {
+function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Ayni dosya uzerinde calisan islemleri siraya koyar.
- */
 function withLock(key, task) {
   const previous = queues.get(key) || Promise.resolve();
   const current = previous.then(task, task);
 
-  // Zincir bir hatadan dolayi kopmasin.
-  queues.set(key, current.then(() => undefined, () => undefined));
+  queues.set(key, current.then(
+    () => undefined,
+    () => undefined
+  ));
 
   return current;
 }
 
-async function fileExists(file) {
+async function exists(file) {
   try {
     await fs.access(file);
     return true;
@@ -40,62 +30,59 @@ async function fileExists(file) {
   }
 }
 
-async function ensureFile(file, initialValue) {
-  if (await fileExists(file)) {
+async function ensureFile(file, initial) {
+  if (await exists(file)) {
     return;
   }
 
   await fs.mkdir(path.dirname(file), { recursive: true });
 
   try {
-    // 'wx' => dosya zaten varsa yazmaz, boylece es zamanli cagrilar birbirini ezmez.
-    await fs.writeFile(file, JSON.stringify(initialValue, null, 2), {
+    // wx: dosya varsa yazmaz, iki istek ayni anda olusturmaya calisirsa biri kazanir
+    await fs.writeFile(file, JSON.stringify(initial, null, 2), {
       encoding: 'utf8',
       flag: 'wx',
     });
   } catch (err) {
-    if (err.code !== 'EEXIST') {
-      throw err;
-    }
+    if (err.code !== 'EEXIST') throw err;
   }
 }
 
-async function renameWithRetry(source, target, attempts = 5) {
+async function renameWithRetry(from, to, attempts = 5) {
   let lastError;
 
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
+  for (let i = 0; i < attempts; i += 1) {
     try {
-      await fs.rename(source, target);
+      await fs.rename(from, to);
       return;
     } catch (err) {
       lastError = err;
 
-      // Windows'ta dosya kisa sure kilitli kalabiliyor; tekrar dene.
+      // Windows'ta dosya kisa sure kilitli kalabiliyor
       const retryable = ['EPERM', 'EACCES', 'EBUSY'].includes(err.code);
-      if (!retryable || attempt === attempts - 1) {
-        throw err;
-      }
+      if (!retryable || i === attempts - 1) throw err;
 
-      await delay(20 * (attempt + 1));
+      await sleep(20 * (i + 1));
     }
   }
 
   throw lastError;
 }
 
+// Once gecici dosyaya yazip sonra rename ediyorum, yarim dosya okunmasin
 async function writeJsonAtomic(file, data) {
   await fs.mkdir(path.dirname(file), { recursive: true });
 
-  const tempFile = `${file}.${process.pid}.${Date.now()}.${Math.random()
+  const temp = `${file}.${process.pid}.${Date.now()}.${Math.random()
     .toString(16)
     .slice(2)}.tmp`;
 
-  await fs.writeFile(tempFile, JSON.stringify(data, null, 2), 'utf8');
+  await fs.writeFile(temp, JSON.stringify(data, null, 2), 'utf8');
 
   try {
-    await renameWithRetry(tempFile, file);
+    await renameWithRetry(temp, file);
   } catch (err) {
-    await fs.unlink(tempFile).catch(() => {});
+    await fs.unlink(temp).catch(() => {});
     throw err;
   }
 }
@@ -111,6 +98,7 @@ async function readJson(file, fallback) {
   try {
     return JSON.parse(raw);
   } catch {
+    // Sessizce bos listeye donmek veri kaybi olur, hata veriyorum
     throw new Error(`Veri dosyasi okunamadi (bozuk JSON): ${file}`);
   }
 }

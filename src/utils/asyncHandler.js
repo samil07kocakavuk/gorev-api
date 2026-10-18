@@ -1,9 +1,6 @@
-/**
- * async fonksiyonlarda olusan hatalari Express hata middleware'ine aktarir.
- * Boylece her controller icinde try/catch yazmak zorunda kalmayiz.
- */
+// async controller'larda cikan hatayi express'in error handler'ina verir
 module.exports = function asyncHandler(fn) {
-  return function wrapped(req, res, next) {
+  return function (req, res, next) {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };

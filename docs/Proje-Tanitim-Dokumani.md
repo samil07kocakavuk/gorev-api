@@ -1,102 +1,55 @@
-# Proje Tanıtım Dokümanı — TASKFLOW API
+# Proje Tanıtımı
 
-## 1. Projenin Adı
+## Kısaca
 
-**TASKFLOW — Görev ve Proje Yönetim Sistemi REST API'si**
+`görev-api`, günlük işlerimi ve okul projelerimi tek yerden takip etmek için
+yazdığım bir REST API. Node.js ve Express kullandım. Verileri JSON dosyasında
+tutuyorum çünkü bu boyuttaki bir proje için veritabanı kurmak istemedim.
 
-## 2. Projenin Amacı
+## Neden böyle bir şey yaptım
 
-Bu projenin amacı; **Node.js** ve **Express.js** kullanarak **REST API** mimarisine uygun
-bir **Görev ve Proje Yönetim Sistemi** API'si tasarlamak ve geliştirmektir. Proje
-kapsamında görev yönetimi modülü (CRUD), temel middleware (logger), doğrulama
-(validation) ve raporlama servisleri hayata geçirilmiştir.
+Genelde görevlerimi not defterine ve telefonun not uygulamasına dağınık şekilde
+yazıyordum, hangisinin ne zaman biteceğini takip edemiyordum. Hem backend
+pratiği olsun hem de işime yarasın diye kendim için bir API yazdım. Elimdeki
+görevleri `data/tasks.json` içine koydum, gerisini uçlar üzerinden yönetiyorum.
 
-## 3. Senaryo
+## Senaryo
 
-Bir yazılım şirketi, ekip içerisindeki **görevleri**, **projeleri** ve **çalışanların
-sorumluluklarını** tek bir sistem üzerinden takip etmek istemektedir. Şirketin ihtiyaçları:
+Bir görev şu bilgilerle tutuluyor: başlık, açıklama, durum, öncelik, kime
+atandığı, hangi projeye ait olduğu ve bitiş tarihi. Durum üç değerden biri
+olabiliyor: `todo`, `in-progress`, `completed`. Öncelik de `low`, `medium`,
+`high`.
 
-- Görevlerin oluşturulması
-- Görevlerin çalışanlara atanması
-- Görevin durumunun takip edilmesi (yapılacak / devam ediyor / tamamlandı)
-- Görevlerin önceliklendirilmesi (düşük / orta / yüksek)
+Örnek olarak elimde şu an "bitirme projesi sunumu", "React sepet hatasını
+düzelt", "staj başvuruları" gibi kayıtlar var. Proje alanını `bitirme`, `odev`,
+`kariyer`, `portfolyo` gibi ayırdım; böylece hangi iş hangi tarafa ait,
+filtreleyerek görebiliyorum.
 
-Bu ihtiyaçları karşılamak üzere, harici bir veritabanı kurulumu gerektirmeyen, JSON
-dosyası üzerinde kalıcı veri saklayan bir REST API altyapısı geliştirilmiştir.
+## Neler yapıyor
 
-## 4. Temel Özellikler
+Görev tarafında beş temel işlem var: ekleme, listeleme, tek görev getirme,
+güncelleme ve silme. Listelerken duruma, önceliğe, kişiye ve projeye göre
+filtreleyebiliyorum. Başlık ve açıklama içinde arama yapabiliyorum, sıralama ve
+sayfalama var.
 
-### 4.1 Görev Yönetim Modülü (Zorunlu)
+Her istek `logger` middleware'inden geçiyor. Metot, adres, durum kodu ve geçen
+süre hem konsola hem `logs/access.log` dosyasına yazılıyor. Bir istek bozuk
+gelirse `validation` middleware'i 400 dönüyor ve hangi alanın yanlış olduğunu
+söylüyor.
 
-| İşlem | Endpoint | Açıklama |
-|---|---|---|
-| Ekleme | `POST /api/tasks` | Yeni görev oluşturur |
-| Listeleme | `GET /api/tasks` | Tüm görevleri listeler |
-| Detay | `GET /api/tasks/:id` | Belirli bir görevi getirir |
-| Güncelleme | `PUT /api/tasks/:id` | Görev bilgilerini günceller |
-| Silme | `DELETE /api/tasks/:id` | Görevi siler |
+Rapor tarafında üç uç var: tamamlanan görevler, bekleyen görevler ve genel özet.
+Özet ucu durum/öncelik dağılımını ve görev atanan kişileri veriyor.
 
-### 4.2 Temel Middleware — Logger (Zorunlu)
+## Nasıl kurguladım
 
-Tüm API isteklerine ait **HTTP metodu**, **endpoint** ve **zaman damgası** bilgileri,
-istek tamamlandığında hem konsola hem de `logs/access.log` dosyasına kaydedilir.
-Ayrıca yanıt durum kodu ve işlem süresi (ms) de loglanır.
+Kod tek dosyada toplanmasın diye katmanlara ayırdım. Rotalar isteği controller'a
+veriyor, controller service'i çağırıyor, service de JSON dosyasıyla konuşuyor.
+Middleware'ler ayrı duruyor. Hata yakalama tek yerde: controller içinde
+try/catch yazmıyorum, `asyncHandler` hatayı merkezi error handler'a taşıyor.
 
-Örnek log çıktısı:
+## Bilerek yapmadıklarım
 
-```
-[2026-10-18T09:35:12.481Z] POST   /api/tasks -> 201 (4.3ms)
-[2026-10-18T09:35:20.117Z] GET    /api/tasks -> 200 (1.8ms)
-```
-
-### 4.3 Doğrulama (Validation) Middleware
-
-`title`, `description`, `priority` ve `assignee` alanları doğrulanır. Eksik veya geçersiz
-veri gönderildiğinde **400 Bad Request** durum kodu ve açıklayıcı hata mesajları döner.
-
-### 4.4 İleri Seviye API Özellikleri (İsteğe Bağlı)
-
-- **Duruma göre filtreleme:** `GET /api/tasks?status=completed`
-- **Önceliğe göre filtreleme:** `GET /api/tasks?priority=high`
-- **Görev arama:** `GET /api/tasks/search?keyword=backend`
-- **Kullanıcı bazlı listeleme:** `GET /api/tasks/assignee/musa`
-- **Sayfalama:** `GET /api/tasks?page=1&limit=10`
-- **Sıralama:** `GET /api/tasks?sort=-createdAt`
-
-### 4.5 Raporlama Servisleri (İsteğe Bağlı)
-
-- `GET /api/reports/completed` — Tamamlanan görev sayısı
-- `GET /api/reports/pending` — Bekleyen görev sayısı
-- `GET /api/reports/summary` — Genel sistem özeti
-
-## 5. Kullanılan Teknolojiler
-
-| Teknoloji | Sürüm | Amaç |
-|---|---|---|
-| Node.js | >= 18 | Çalışma ortamı |
-| Express.js | 4.x | Web framework ve routing |
-| CORS | 2.x | Frontend erişimi |
-| JSON dosyası | — | Kalıcı veri saklama |
-
-## 6. Mimari Yaklaşım
-
-Proje, katmanlı (layered) bir mimari ile geliştirilmiştir. Bu sayede sorumluluklar
-birbirinden ayrılmış, kod okunabilir ve sürdürülebilir hale getirilmiştir:
-
-- **Routes:** İsteklerin yönlendirildiği rota tanımları
-- **Middleware:** Logger, validation, hata yönetimi gibi ara katmanlar
-- **Controllers:** HTTP istek/yanıt döngüsünü yönetir
-- **Services:** İş mantığı (business logic)
-- **Utils / Config:** Yardımcı fonksiyonlar ve uygulama ayarları
-
-## 7. Sonuç ve Kazanımlar
-
-Bu proje ile:
-
-- REST API mimarisi ve HTTP metotlarının (GET, POST, PUT, DELETE) doğru kullanımı
-- Express.js ile routing ve middleware yazımı
-- Katmanlı proje mimarisi ve klasör yapısı
-- Veri doğrulama ve merkezi hata yönetimi
-- Bir API'nin Postman ile test edilmesi
-
-konularında uygulamalı deneyim kazanılmıştır.
+- Kimlik doğrulama yok. Tek kişi kullandığı için gerek duymadım.
+- Kullanıcı ve proje ayrı tablo değil; `assignee` ve `project` düz metin.
+- Veritabanı yok, JSON dosyası var. Aynı anda birden fazla sunucu aynı dosyaya
+  yazarsa kuyruk yetmez; tek process için tasarladım.

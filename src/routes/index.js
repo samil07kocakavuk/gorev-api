@@ -4,14 +4,8 @@ const config = require('../config');
 const taskRoutes = require('./taskRoutes');
 const reportRoutes = require('./reportRoutes');
 
-/**
- * Ana API router'i  ->  /api
- * Tum alt moduller burada birlestirilir.
- */
-
-// Saglik kontrolu (health check)
 router.get('/health', (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
     status: 'ok',
     name: config.api.name,
@@ -21,7 +15,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-// Moduller
 router.use('/tasks', taskRoutes);
 router.use('/reports', reportRoutes);
 

@@ -1,41 +1,28 @@
 {
   "info": {
     "_postman_id": "b7a1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
-    "name": "TASKFLOW API",
-    "description": "Görev ve Proje Yönetim Sistemi REST API'si - tüm uç noktalar.\n\nKullanım: Önce sunucuyu `npm start` ile çalıştırın, ardından bu koleksiyonu import edip istekleri sırayla deneyin.",
+    "name": "görev-api",
+    "description": "Görev takip API'si. Önce `npm start` ile sunucuyu çalıştır, sonra istekleri sırayla dene.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000",
-      "type": "string"
-    },
-    {
-      "key": "taskId",
-      "value": "1",
-      "type": "string"
-    }
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "taskId", "value": "1", "type": "string" }
   ],
   "item": [
     {
-      "name": "1. Sağlık ve Genel",
+      "name": "1. Genel",
       "item": [
         {
           "name": "API Bilgisi",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/",
-              "host": ["{{baseUrl}}"],
-              "path": [""]
-            },
-            "description": "API hakkında bilgi ve endpoint listesi."
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
           }
         },
         {
-          "name": "Sağlık Kontrolü (Health)",
+          "name": "Sağlık Kontrolü",
           "request": {
             "method": "GET",
             "header": [],
@@ -43,17 +30,16 @@
               "raw": "{{baseUrl}}/api/health",
               "host": ["{{baseUrl}}"],
               "path": ["api", "health"]
-            },
-            "description": "Sunucunun çalışıp çalışmadığını kontrol eder."
+            }
           }
         }
       ]
     },
     {
-      "name": "2. Görev Modülü (CRUD)",
+      "name": "2. Görevler",
       "item": [
         {
-          "name": "Listeleme - Tüm Görevler",
+          "name": "Listeleme",
           "request": {
             "method": "GET",
             "header": [],
@@ -61,12 +47,11 @@
               "raw": "{{baseUrl}}/api/tasks",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"]
-            },
-            "description": "Tüm görevleri listeler."
+            }
           }
         },
         {
-          "name": "Ekleme - Görev Oluştur",
+          "name": "Ekleme",
           "event": [
             {
               "listen": "test",
@@ -74,9 +59,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "if (pm.response.code === 201) {",
-                  "    const body = pm.response.json();",
-                  "    pm.collectionVariables.set('taskId', body.data.id);",
-                  "    console.log('Yeni görev id:', body.data.id);",
+                  "    pm.collectionVariables.set('taskId', pm.response.json().data.id);",
                   "}"
                 ]
               }
@@ -84,24 +67,21 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Veritabani tasarimi\",\n  \"description\": \"Gorev tablosu semasini hazirla\",\n  \"priority\": \"high\",\n  \"assignee\": \"musa\"\n}",
+              "raw": "{\n  \"title\": \"Sunum slaytlarini hazirla\",\n  \"description\": \"Ilk uc slayt bitsin.\",\n  \"priority\": \"high\",\n  \"assignee\": \"samil\",\n  \"project\": \"bitirme\",\n  \"dueDate\": \"2026-10-27\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/tasks",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"]
-            },
-            "description": "Yeni bir görev oluşturur. Oluşan id, taskId değişkenine kaydedilir."
+            }
           }
         },
         {
-          "name": "Detay - Görev Getir",
+          "name": "Detay",
           "request": {
             "method": "GET",
             "header": [],
@@ -109,32 +89,28 @@
               "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks", "{{taskId}}"]
-            },
-            "description": "Belirli bir görevin detayını getirir."
+            }
           }
         },
         {
-          "name": "Güncelleme - Görev Güncelle",
+          "name": "Güncelleme",
           "request": {
             "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"completed\",\n  \"priority\": \"medium\"\n}",
+              "raw": "{\n  \"status\": \"completed\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks", "{{taskId}}"]
-            },
-            "description": "Görev bilgilerini günceller."
+            }
           }
         },
         {
-          "name": "Silme - Görev Sil",
+          "name": "Silme",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -142,17 +118,16 @@
               "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks", "{{taskId}}"]
-            },
-            "description": "Görevi siler."
+            }
           }
         }
       ]
     },
     {
-      "name": "3. Filtreleme, Arama ve Sayfalama",
+      "name": "3. Filtre, Arama, Sayfalama",
       "item": [
         {
-          "name": "Duruma Göre Filtrele (completed)",
+          "name": "Duruma göre",
           "request": {
             "method": "GET",
             "header": [],
@@ -161,12 +136,11 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"],
               "query": [{ "key": "status", "value": "completed" }]
-            },
-            "description": "Sadece tamamlanmış görevleri listeler."
+            }
           }
         },
         {
-          "name": "Önceliğe Göre Filtrele (high)",
+          "name": "Önceliğe göre",
           "request": {
             "method": "GET",
             "header": [],
@@ -175,56 +149,52 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"],
               "query": [{ "key": "priority", "value": "high" }]
-            },
-            "description": "Sadece yüksek öncelikli görevleri listeler."
+            }
           }
         },
         {
-          "name": "Görev Arama (keyword)",
+          "name": "Arama",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/tasks/search?keyword=test",
+              "raw": "{{baseUrl}}/api/tasks/search?keyword=sunum",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks", "search"],
-              "query": [{ "key": "keyword", "value": "test" }]
-            },
-            "description": "Başlık ve açıklamada anahtar kelime arar."
+              "query": [{ "key": "keyword", "value": "sunum" }]
+            }
           }
         },
         {
-          "name": "Kullanıcı Bazlı Listeleme",
+          "name": "Kişiye göre",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/tasks/assignee/musa",
+              "raw": "{{baseUrl}}/api/tasks/assignee/samil",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tasks", "assignee", "musa"]
-            },
-            "description": "Belirli bir kişiye atanmış görevleri listeler."
+              "path": ["api", "tasks", "assignee", "samil"]
+            }
           }
         },
         {
-          "name": "Sayfalama (page & limit)",
+          "name": "Sayfalama",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/tasks?page=1&limit=2",
+              "raw": "{{baseUrl}}/api/tasks?page=1&limit=3",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"],
               "query": [
                 { "key": "page", "value": "1" },
-                { "key": "limit", "value": "2" }
+                { "key": "limit", "value": "3" }
               ]
-            },
-            "description": "Sayfalama örneği."
+            }
           }
         },
         {
-          "name": "Sıralama (sort)",
+          "name": "Sıralama",
           "request": {
             "method": "GET",
             "header": [],
@@ -233,17 +203,16 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"],
               "query": [{ "key": "sort", "value": "-createdAt" }]
-            },
-            "description": "En son oluşturulandan en eskiye doğru sıralar."
+            }
           }
         }
       ]
     },
     {
-      "name": "4. Raporlama",
+      "name": "4. Raporlar",
       "item": [
         {
-          "name": "Tamamlanan Görevler",
+          "name": "Tamamlanan",
           "request": {
             "method": "GET",
             "header": [],
@@ -251,12 +220,11 @@
               "raw": "{{baseUrl}}/api/reports/completed",
               "host": ["{{baseUrl}}"],
               "path": ["api", "reports", "completed"]
-            },
-            "description": "Tamamlanan görevlerin sayısı ve listesi."
+            }
           }
         },
         {
-          "name": "Bekleyen Görevler",
+          "name": "Bekleyen",
           "request": {
             "method": "GET",
             "header": [],
@@ -264,12 +232,11 @@
               "raw": "{{baseUrl}}/api/reports/pending",
               "host": ["{{baseUrl}}"],
               "path": ["api", "reports", "pending"]
-            },
-            "description": "Bekleyen görevlerin sayısı ve listesi."
+            }
           }
         },
         {
-          "name": "Genel Özet",
+          "name": "Özet",
           "request": {
             "method": "GET",
             "header": [],
@@ -277,57 +244,50 @@
               "raw": "{{baseUrl}}/api/reports/summary",
               "host": ["{{baseUrl}}"],
               "path": ["api", "reports", "summary"]
-            },
-            "description": "Genel sistem özeti."
+            }
           }
         }
       ]
     },
     {
-      "name": "5. Hata Senaryoları",
+      "name": "5. Hatalı İstekler",
       "item": [
         {
-          "name": "400 - Eksik Alan (title yok)",
+          "name": "400 - title yok",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"assignee\": \"musa\"\n}",
+              "raw": "{\n  \"assignee\": \"samil\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/tasks",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"]
-            },
-            "description": "400 Bad Request beklenir."
+            }
           }
         },
         {
-          "name": "400 - Geçersiz Öncelik",
+          "name": "400 - geçersiz priority",
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Test\",\n  \"assignee\": \"musa\",\n  \"priority\": \"urgent\"\n}",
+              "raw": "{\n  \"title\": \"deneme\",\n  \"assignee\": \"samil\",\n  \"priority\": \"urgent\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/tasks",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks"]
-            },
-            "description": "400 Bad Request beklenir."
+            }
           }
         },
         {
-          "name": "404 - Olmayan Görev",
+          "name": "404 - olmayan görev",
           "request": {
             "method": "GET",
             "header": [],
@@ -335,21 +295,19 @@
               "raw": "{{baseUrl}}/api/tasks/9999",
               "host": ["{{baseUrl}}"],
               "path": ["api", "tasks", "9999"]
-            },
-            "description": "404 Not Found beklenir."
+            }
           }
         },
         {
-          "name": "404 - Olmayan Endpoint",
+          "name": "404 - olmayan endpoint",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/bilinmeyen",
+              "raw": "{{baseUrl}}/api/yok",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "bilinmeyen"]
-            },
-            "description": "404 Not Found beklenir."
+              "path": ["api", "yok"]
+            }
           }
         }
       ]

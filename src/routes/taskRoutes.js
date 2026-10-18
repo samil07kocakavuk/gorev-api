@@ -1,28 +1,17 @@
 const router = require('express').Router();
 
 const taskController = require('../controllers/taskController');
-const {
-  validateCreateTask,
-  validateUpdateTask,
-} = require('../middleware/validateTask');
+const { validateCreateTask, validateUpdateTask } = require('../middleware/validateTask');
 const asyncHandler = require('../utils/asyncHandler');
 
-/**
- * Gorev (task) rotalari  ->  /api/tasks
- *
- * Not: /search ve /assignee gibi ozel rotalar, /:id rotasindan
- * ONCE tanimlanmalidir. Aksi halde "search" kelimesi id olarak algilanir.
- */
-
-// Ozel rotalar
+// /search ve /assignee, /:id'den once gelmeli; yoksa "search" id sanilir
 router.get('/search', asyncHandler(taskController.searchTasks));
 router.get('/assignee/:assignee', asyncHandler(taskController.getTasksByAssignee));
 
-// CRUD rotalari
-router.get('/', asyncHandler(taskController.listTasks));            // Listeleme
-router.post('/', validateCreateTask, asyncHandler(taskController.createTask)); // Ekleme
-router.get('/:id', asyncHandler(taskController.getTask));           // Detay
-router.put('/:id', validateUpdateTask, asyncHandler(taskController.updateTask)); // Guncelleme
-router.delete('/:id', asyncHandler(taskController.deleteTask));     // Silme
+router.get('/', asyncHandler(taskController.listTasks));
+router.post('/', validateCreateTask, asyncHandler(taskController.createTask));
+router.get('/:id', asyncHandler(taskController.getTask));
+router.put('/:id', validateUpdateTask, asyncHandler(taskController.updateTask));
+router.delete('/:id', asyncHandler(taskController.deleteTask));
 
 module.exports = router;

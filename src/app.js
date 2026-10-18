@@ -8,46 +8,35 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-// Guvenlik: framework bilgisini gizle
 app.disable('x-powered-by');
 
-/* ------------------------- Genel Middleware ------------------------- */
-app.use(cors()); // Frontend (React/Vue) uygulamalarinin API'ye erismesine izin verir
-app.use(express.json({ limit: '100kb' })); // JSON govdeleri okur (boyut siniri ile)
-app.use(express.urlencoded({ extended: true, limit: '100kb' })); // Form verileri
-app.use(logger); // Istek loglama (HTTP metodu, endpoint, zaman damgasi)
+app.use(cors());
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+app.use(logger);
 
-/* ---------------------------- Karsilama ---------------------------- */
 app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
+  res.json({
     name: config.api.name,
     version: config.api.version,
-    description: 'Gorev ve Proje Yonetim Sistemi REST API',
-    endpoints: {
-      health: 'GET /api/health',
-      tasks: {
-        list: 'GET /api/tasks',
-        create: 'POST /api/tasks',
-        detail: 'GET /api/tasks/:id',
-        update: 'PUT /api/tasks/:id',
-        remove: 'DELETE /api/tasks/:id',
-        search: 'GET /api/tasks/search?keyword=',
-        byAssignee: 'GET /api/tasks/assignee/:assignee',
-      },
-      reports: {
-        completed: 'GET /api/reports/completed',
-        pending: 'GET /api/reports/pending',
-        summary: 'GET /api/reports/summary',
-      },
-    },
+    endpoints: [
+      'GET    /api/health',
+      'GET    /api/tasks',
+      'POST   /api/tasks',
+      'GET    /api/tasks/:id',
+      'PUT    /api/tasks/:id',
+      'DELETE /api/tasks/:id',
+      'GET    /api/tasks/search?keyword=',
+      'GET    /api/tasks/assignee/:assignee',
+      'GET    /api/reports/completed',
+      'GET    /api/reports/pending',
+      'GET    /api/reports/summary',
+    ],
   });
 });
 
-/* ------------------------------ Rotalar ---------------------------- */
 app.use('/api', routes);
 
-/* --------------------------- Hata Yonetimi -------------------------- */
 app.use(notFound);
 app.use(errorHandler);
 

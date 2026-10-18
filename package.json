@@ -1,19 +1,12 @@
 {
-  "name": "taskflow-api",
+  "name": "gorev-api",
   "version": "1.0.0",
-  "description": "TASKFLOW - Node.js ve Express.js ile gelistirilmis Gorev ve Proje Yonetim Sistemi REST API",
+  "description": "Kucuk bir gorev takip API'si. Node.js + Express.",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
   },
-  "keywords": [
-    "nodejs",
-    "express",
-    "rest-api",
-    "task-management",
-    "crud"
-  ],
   "author": "Samil",
   "license": "MIT",
   "engines": {
