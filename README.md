@@ -146,6 +146,7 @@ TaskFlow-API/
 │   │   └── fileStore.js
 │   ├── app.js                  # Express uygulaması
 │   └── server.js               # Sunucu başlatma noktası
+├── .env.example
 ├── .gitignore
 ├── package.json
 └── README.md

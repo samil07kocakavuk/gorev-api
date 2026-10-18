@@ -16,6 +16,18 @@ const server = app.listen(config.port, () => {
   /* eslint-enable no-console */
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(
+      `Hata: ${config.port} portu zaten kullaniliyor. Baska bir port deneyin (or: PORT=4000).`
+    );
+  } else {
+    console.error('Sunucu baslatilamadi:', err);
+  }
+
+  process.exit(1);
+});
+
 // Sunucuyu duzgun sekilde kapat (graceful shutdown)
 function shutdown(signal) {
   console.log(`\n${signal} alindi. Sunucu kapatiliyor...`);
@@ -27,5 +39,14 @@ function shutdown(signal) {
 
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// Beklenmeyen hatalar sunucuyu sessizce cokertmesin.
+process.on('unhandledRejection', (reason) => {
+  console.error('Islenmeyen promise hatasi:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Yakalanmayan hata:', err);
+});
 
 module.exports = server;

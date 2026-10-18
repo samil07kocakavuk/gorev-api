@@ -23,9 +23,17 @@ async function listTasks(req, res) {
  * Baslik ve aciklamada anahtar kelime aramasi.
  */
 async function searchTasks(req, res) {
-  const keyword = req.query.keyword || req.query.q || '';
+  // Ayni parametre birden fazla gonderilirse req.query bir dizi olabilir.
+  const rawKeyword =
+    typeof req.query.keyword === 'string'
+      ? req.query.keyword
+      : typeof req.query.q === 'string'
+        ? req.query.q
+        : '';
 
-  if (!keyword.trim()) {
+  const keyword = rawKeyword.trim();
+
+  if (!keyword) {
     return res.status(400).json({
       success: false,
       message: 'Arama icin "keyword" query parametresi gereklidir.',

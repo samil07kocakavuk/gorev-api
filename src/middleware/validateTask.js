@@ -6,13 +6,14 @@
 const ALLOWED_STATUS = ['todo', 'in-progress', 'completed'];
 const ALLOWED_PRIORITY = ['low', 'medium', 'high'];
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-/**
- * Tek bir alani dogrular ve hatayi errors dizisine ekler.
- */
 function validateField(field, value, errors, { required = false } = {}) {
   switch (field) {
     case 'title':
@@ -26,9 +27,12 @@ function validateField(field, value, errors, { required = false } = {}) {
       break;
 
     case 'description':
-      if (value !== undefined && value !== null && typeof value !== 'string') {
+      if (value === undefined || value === null) {
+        break;
+      }
+      if (typeof value !== 'string') {
         errors.push('description metin olmalidir.');
-      } else if (typeof value === 'string' && value.length > 500) {
+      } else if (value.length > 500) {
         errors.push('description en fazla 500 karakter olabilir.');
       }
       break;
@@ -59,10 +63,20 @@ function validateField(field, value, errors, { required = false } = {}) {
       }
       break;
 
+    case 'project':
+      if (value === null) {
+        break;
+      }
+      if (value !== undefined && typeof value !== 'string') {
+        errors.push('project metin olmalidir.');
+      } else if (typeof value === 'string' && value.trim().length > 100) {
+        errors.push('project en fazla 100 karakter olabilir.');
+      }
+      break;
+
     case 'dueDate':
       if (value !== undefined && value !== null && value !== '') {
-        const parsed = Date.parse(value);
-        if (Number.isNaN(parsed)) {
+        if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
           errors.push('dueDate gecerli bir tarih olmalidir (or: 2026-11-01).');
         }
       }
@@ -73,11 +87,23 @@ function validateField(field, value, errors, { required = false } = {}) {
   }
 }
 
+function rejectInvalidBody(res) {
+  return res.status(400).json({
+    success: false,
+    message: 'Gecersiz istek verisi.',
+    errors: ['Istek govdesi bir JSON nesnesi olmalidir.'],
+  });
+}
+
 /**
- * POST /api/tasks  -> yeni gorev olusturma dogrulamasi
+ * POST /api/tasks -> yeni gorev olusturma dogrulamasi
  */
 function validateCreateTask(req, res, next) {
-  const body = req.body || {};
+  if (!isPlainObject(req.body)) {
+    return rejectInvalidBody(res);
+  }
+
+  const body = req.body;
   const errors = [];
 
   validateField('title', body.title, errors, { required: true });
@@ -85,6 +111,7 @@ function validateCreateTask(req, res, next) {
   validateField('description', body.description, errors);
   validateField('priority', body.priority, errors);
   validateField('status', body.status, errors);
+  validateField('project', body.project, errors);
   validateField('dueDate', body.dueDate, errors);
 
   if (errors.length > 0) {
@@ -102,9 +129,22 @@ function validateCreateTask(req, res, next) {
  * PUT /api/tasks/:id -> gorev guncelleme dogrulamasi (kismi guncelleme destekler)
  */
 function validateUpdateTask(req, res, next) {
-  const body = req.body || {};
-  const editableFields = ['title', 'description', 'priority', 'status', 'assignee', 'dueDate'];
-  const presentFields = editableFields.filter((f) => body[f] !== undefined);
+  if (!isPlainObject(req.body)) {
+    return rejectInvalidBody(res);
+  }
+
+  const body = req.body;
+  const editableFields = [
+    'title',
+    'description',
+    'priority',
+    'status',
+    'assignee',
+    'project',
+    'dueDate',
+  ];
+
+  const presentFields = editableFields.filter((field) => body[field] !== undefined);
 
   if (presentFields.length === 0) {
     return res.status(400).json({
@@ -116,7 +156,8 @@ function validateUpdateTask(req, res, next) {
 
   const errors = [];
   presentFields.forEach((field) => {
-    validateField(field, body[field], errors, { required: field === 'title' || field === 'assignee' });
+    const required = field === 'title' || field === 'assignee';
+    validateField(field, body[field], errors, { required });
   });
 
   if (errors.length > 0) {

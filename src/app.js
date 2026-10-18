@@ -8,10 +8,13 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+// Guvenlik: framework bilgisini gizle
+app.disable('x-powered-by');
+
 /* ------------------------- Genel Middleware ------------------------- */
 app.use(cors()); // Frontend (React/Vue) uygulamalarinin API'ye erismesine izin verir
-app.use(express.json()); // JSON govdeleri okur
-app.use(express.urlencoded({ extended: true })); // Form verileri
+app.use(express.json({ limit: '100kb' })); // JSON govdeleri okur (boyut siniri ile)
+app.use(express.urlencoded({ extended: true, limit: '100kb' })); // Form verileri
 app.use(logger); // Istek loglama (HTTP metodu, endpoint, zaman damgasi)
 
 /* ---------------------------- Karsilama ---------------------------- */

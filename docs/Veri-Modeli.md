@@ -68,10 +68,11 @@ kolayca taşınabilecek şekilde tasarlanmıştır.
 
 ## 7. Depolama Yapısı
 
-`data/tasks.json` dosyası, görevleri bir dizi içinde tutar:
+`data/tasks.json` dosyası, görevleri ve bir sonraki ID sayacını tutar:
 
 ```json
 {
+  "nextId": 7,
   "tasks": [
     { "id": 1, "title": "...", "...": "..." },
     { "id": 2, "title": "...", "...": "..." }
@@ -81,7 +82,11 @@ kolayca taşınabilecek şekilde tasarlanmıştır.
 
 - Uygulama başlarken dosya okunur. Dosya yoksa otomatik oluşturulur.
 - Her ekleme/güncelleme/silme işleminden sonra dosya güncellenir.
-- `id` değeri, mevcut en büyük ID'nin bir fazlası olarak üretilir (auto-increment).
+- `nextId` sayacı sayesinde silinen bir görevin ID'si yeni göreve tekrar verilmez.
+- Yazma işlemleri sıraya alınır ve **atomik** yapılır: veri önce geçici dosyaya
+  yazılır, ardından `rename` ile gerçek dosyanın üzerine taşınır. Böylece eş
+  zamanlı isteklerde veri kaybı veya yarım dosya oluşmaz.
+- Bozuk JSON durumunda veri sessizce sıfırlanmaz; hata döner.
 
 ## 8. Gelecekte İlişkisel Veritabanına Taşıma
 

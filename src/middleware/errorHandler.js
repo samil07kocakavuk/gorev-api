@@ -11,25 +11,35 @@ function notFound(req, res) {
 }
 
 /**
- * Merkezi hata yakalayici (error handling middleware).
- * Uygulamanin herhangi bir yerinde firlatilan hatalar burada
- * tek noktadan standart bir JSON formatina cevrilir.
+ * Merkezi hata yakalayici.
+ * - 4xx hatalarinda aciklayici mesaj doner.
+ * - 5xx hatalarinda detaylar loglanir, istemciye genel mesaj doner
+ *   (ic hata detaylari disari sizdirilmaz).
  */
 function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
-  const isHttpError = err instanceof HttpError;
-  const status = isHttpError ? err.status : err.status || 500;
+  let status = err instanceof HttpError ? err.status : err.status || 500;
+  let message = err.message || 'Sunucu hatasi.';
+  let details = err.details;
 
-  if (status >= 500) {
+  // Body parser hatalari
+  if (err.type === 'entity.parse.failed') {
+    status = 400;
+    message = 'Gecersiz JSON formati.';
+    details = undefined;
+  } else if (err.type === 'entity.too.large') {
+    status = 413;
+    message = 'Istek govdesi cok buyuk.';
+    details = undefined;
+  } else if (status >= 500) {
     console.error('Beklenmeyen hata:', err);
+    message = 'Sunucu hatasi.';
+    details = undefined;
   }
 
-  const payload = {
-    success: false,
-    message: isHttpError || err.message ? err.message : 'Sunucu hatasi.',
-  };
+  const payload = { success: false, message };
 
-  if (err.details) {
-    payload.details = err.details;
+  if (details) {
+    payload.details = details;
   }
 
   res.status(status).json(payload);
