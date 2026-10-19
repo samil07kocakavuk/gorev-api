@@ -1,4 +1,4 @@
-const test = require('node:test');
+const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const os = require('node:os');
 const path = require('node:path');
@@ -39,7 +39,9 @@ async function api(method, url, body) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  const setCookies = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
+  const setCookies = res.headers.getSetCookie
+    ? res.headers.getSetCookie()
+    : [res.headers.get('set-cookie')].filter(Boolean);
 
   if (setCookies.length) {
     cookie = setCookies.map((c) => c.split(';')[0]).join('; ');
@@ -55,7 +57,7 @@ async function api(method, url, body) {
   return { status: res.status, json };
 }
 
-test.before(async () => {
+before(async () => {
   removeTempFiles();
 
   server = app.listen(0);
@@ -63,7 +65,7 @@ test.before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
 });
 
-test.after(async () => {
+after(async () => {
   await new Promise((resolve) => server.close(resolve));
   removeTempFiles();
 });
