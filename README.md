@@ -164,4 +164,5 @@ kendisi saklıyor, sonraki istekler oturumlu gidiyor.
   process için tasarladım.
 
 Dokümanlar: [tanıtım](docs/Proje-Tanitim-Dokumani.md) ·
-[veri modeli](docs/Veri-Modeli.md) · [API](docs/API-Dokumani.md)
+[veri modeli](docs/Veri-Modeli.md) · [API](docs/API-Dokumani.md) ·
+[teslim raporu](docs/Teslim-Raporu.md)
