@@ -1,0 +1,12 @@
+{
+  "nextId": 2,
+  "users": [
+    {
+      "id": 1,
+      "username": "samil",
+      "name": "Samil",
+      "passwordHash": "scrypt$29dfc4ea6a80f3b2cb67beff1a1911d7$518780ccc42c5610ca72251709850a8dbe480e741d35d0e73dc5f8bc6205f055c450fd2d8beb8512386ab856bc9e1855b5143900ad8222d6b203eb6ee4340cca",
+      "createdAt": "2026-10-19T08:00:00.000Z"
+    }
+  ]
+}

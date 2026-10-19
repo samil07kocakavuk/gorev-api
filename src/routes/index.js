@@ -1,8 +1,10 @@
 const router = require('express').Router();
 
 const config = require('../config');
+const authRoutes = require('./authRoutes');
 const taskRoutes = require('./taskRoutes');
 const reportRoutes = require('./reportRoutes');
+const requireAuth = require('../middleware/requireAuth');
 
 router.get('/health', (req, res) => {
   res.json({
@@ -15,7 +17,10 @@ router.get('/health', (req, res) => {
   });
 });
 
-router.use('/tasks', taskRoutes);
-router.use('/reports', reportRoutes);
+router.use('/auth', authRoutes);
+
+// Gorev ve rapor uclari icin giris zorunlu
+router.use('/tasks', requireAuth, taskRoutes);
+router.use('/reports', requireAuth, reportRoutes);
 
 module.exports = router;

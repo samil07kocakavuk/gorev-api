@@ -3,14 +3,19 @@
 Kendi işlerimi takip etmek için yazdığım küçük bir görev API'si. Node.js ve Express
 kullandım, verileri JSON dosyasında tutuyorum. Veritabanı kurmak istemedim.
 
+Giriş için session + çerez kullanıyorum. Görev ve rapor uçlarına erişmek için önce
+giriş yapmak gerekiyor.
+
 ## Neler var
 
-- Görev ekleme, listeleme, detay, güncelleme, silme
+- Kayıt, giriş, çıkış ve "ben kimim" uçları (session tabanlı)
+- Görev ekleme, listeleme, detay, güncelleme (`PUT` ve `PATCH`), silme
 - Her isteği konsola ve `logs/access.log` dosyasına yazan logger
 - Alan doğrulama: `title` ve `assignee` zorunlu, `priority` ve `status` belli değerlerden biri
 - Durum, öncelik, kişi ve projeye göre filtreleme
 - Başlık/açıklamada arama, sıralama, sayfalama
 - Tamamlanan / bekleyen / genel özet için üç rapor ucu
+- `npm test` ile 25 otomatik test (giriş, CRUD, doğrulama, hata, eşzamanlı yazma)
 
 ## Kurulum
 
@@ -33,21 +38,48 @@ $env:PORT=4000; npm start
 
 Geliştirirken `npm run dev` kullanıyorum; dosya değişince sunucu kendini yeniliyor.
 
+## Giriş
+
+Hazır kullanıcı: **`samil` / `123456`**
+
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"samil","password":"123456"}' \
+  -c cookie.txt
+```
+
+Dönen `gorev.sid` çerezini sonraki isteklerde göndermen gerekiyor:
+
+```bash
+curl http://localhost:3000/api/tasks -b cookie.txt
+```
+
+Yeni kullanıcı için `POST /api/auth/register` kullanılıyor. Şifreler `scrypt` ile
+hashlenip `data/users.json` içinde tutuluyor, düz metin yok.
+
 ## Uçlar
 
 | Metot | Yol | Ne yapıyor |
 |---|---|---|
-| GET | `/api/health` | Sunucu ayakta mı |
+| GET | `/api/health` | Sunucu ayakta mı (giriş gerekmez) |
+| POST | `/api/auth/register` | Kayıt |
+| POST | `/api/auth/login` | Giriş |
+| POST | `/api/auth/logout` | Çıkış |
+| GET | `/api/auth/me` | Oturumdaki kullanıcı |
 | GET | `/api/tasks` | Görevleri listeler |
 | POST | `/api/tasks` | Yeni görev ekler |
 | GET | `/api/tasks/:id` | Tek görev getirir |
 | PUT | `/api/tasks/:id` | Görevi günceller |
+| PATCH | `/api/tasks/:id` | Görevi kısmi günceller |
 | DELETE | `/api/tasks/:id` | Görevi siler |
 | GET | `/api/tasks/search?keyword=` | Başlık/açıklamada arar |
 | GET | `/api/tasks/assignee/:assignee` | Kişiye atanan görevler |
 | GET | `/api/reports/completed` | Tamamlananlar |
 | GET | `/api/reports/pending` | Bekleyenler |
 | GET | `/api/reports/summary` | Genel özet |
+
+Giriş gerektiren uçlar oturum yoksa `401` dönüyor.
 
 Listeleme şu parametreleri alıyor: `status`, `priority`, `assignee`, `project`,
 `keyword`, `sort`, `page`, `limit`. Örnek:
@@ -61,30 +93,36 @@ kullanılabilir. Azalan sıralama için başına `-` koyuyorum (`sort=-createdAt
 
 ## Örnek
 
+Giriş yaptıktan sonra:
+
 ```bash
 curl -X POST http://localhost:3000/api/tasks \
   -H "Content-Type: application/json" \
+  -b cookie.txt \
   -d '{"title":"Sunum slaytlarini hazirla","priority":"high","assignee":"samil"}'
 ```
 
 ```bash
-curl -X PUT http://localhost:3000/api/tasks/1 \
+curl -X PATCH http://localhost:3000/api/tasks/1 \
   -H "Content-Type: application/json" \
+  -b cookie.txt \
   -d '{"status":"completed"}'
 ```
 
 ## Klasörler
 
 ```
-data/tasks.json       veriler
+data/tasks.json       gorevler
+data/users.json       kullanicilar (hashli sifre)
 docs/                 tanitim, veri modeli, api dokumani
 postman/              postman koleksiyonu
 src/config            ayarlar
 src/controllers       istek/cevap
-src/middleware        logger, validation, hata yakalama
+src/middleware        logger, validation, oturum kontrolu, hata yakalama
 src/routes            rotalar
 src/services          is mantigi
 src/utils             yardimci dosyalar
+test/                 api testleri
 ```
 
 ## Veri
@@ -102,14 +140,26 @@ Görevler `data/tasks.json` içinde duruyor:
 Dosyaya yazarken önce geçici dosyaya yazıp sonra üzerine taşıyorum, böylece aynı
 anda gelen isteklerde yarım dosya okunmuyor. Yazma işlemleri sıraya alınıyor.
 
+## Test
+
+```bash
+npm test
+```
+
+Testler geçici dosyalarla çalışıyor, `data/` içindeki verilere dokunmuyor.
+
 ## Postman
 
-`postman/gorev-api.postman_collection.json` dosyasını Postman'e import edip
-istekleri deneyebilirsin. `baseUrl` değişkeni `http://localhost:3000` geliyor.
+`postman/gorev-api.postman_collection.json` dosyasını Postman'e import et.
+`baseUrl` değişkeni `http://localhost:3000` geliyor.
+
+**Önce `0. Giriş` klasöründeki `Giriş Yap` isteğini çalıştır.** Postman çerezi
+kendisi saklıyor, sonraki istekler oturumlu gidiyor.
 
 ## Notlar
 
-- Kimlik doğrulama yok; tek kişilik kullanım için yazdım.
+- Session'lar sunucu belleğinde; sunucu yeniden başlarsa tekrar giriş yapmak gerekir.
+- `SESSION_SECRET` ortam değişkeniyle değiştirilebilir.
 - Aynı anda birden fazla sunucu aynı dosyaya yazarsa kuyruk işe yaramaz. Tek
   process için tasarladım.
 

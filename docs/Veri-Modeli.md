@@ -1,6 +1,8 @@
 # Veri Modeli
 
-Tek bir kayıt tipi var: `Task`. Aşağıdaki alanları kullanıyorum.
+İki kayıt tipi var: `Task` ve `User`.
+
+## Task
 
 | Alan | Tip | Zorunlu | Not |
 |---|---|---|---|
@@ -15,7 +17,7 @@ Tek bir kayıt tipi var: `Task`. Aşağıdaki alanları kullanıyorum.
 | `createdAt` | tarih-saat | otomatik | Oluşturulma zamanı |
 | `updatedAt` | tarih-saat | otomatik | Son güncelleme |
 
-Örnek kayıt:
+Örnek:
 
 ```json
 {
@@ -32,7 +34,22 @@ Tek bir kayıt tipi var: `Task`. Aşağıdaki alanları kullanıyorum.
 }
 ```
 
+## User
+
+| Alan | Tip | Not |
+|---|---|---|
+| `id` | sayı | Artan numara |
+| `username` | metin | 3-30 karakter, tekil, küçük harfe çevriliyor |
+| `name` | metin | Görünen ad |
+| `passwordHash` | metin | `scrypt$tuz$hash` formatında, düz şifre tutulmuyor |
+| `createdAt` | tarih-saat | Oluşturulma zamanı |
+
+`passwordHash` hiçbir cevapta dönmüyor; `sanitize` fonksiyonu sadece `id`,
+`username` ve `name` gönderiyor.
+
 ## Dosya düzeni
+
+`data/tasks.json`:
 
 ```json
 {
@@ -41,9 +58,26 @@ Tek bir kayıt tipi var: `Task`. Aşağıdaki alanları kullanıyorum.
 }
 ```
 
-`nextId` bir sonraki görevin numarasını tutuyor. Sadece en büyük ID'ye bakıp bir
-fazlasını verseydim, silinen görevin numarası yeni göreve tekrar gelirdi. Onun
-için sayacı ayrı tutuyorum.
+`data/users.json`:
+
+```json
+{
+  "nextId": 2,
+  "users": [
+    {
+      "id": 1,
+      "username": "samil",
+      "name": "Samil",
+      "passwordHash": "scrypt$...$...",
+      "createdAt": "2026-10-19T08:00:00.000Z"
+    }
+  ]
+}
+```
+
+`nextId` bir sonraki kaydın numarasını tutuyor. Sadece en büyük ID'ye bakıp bir
+fazlasını verseydim, silinen kaydın numarası yenisine tekrar gelirdi. Onun için
+sayacı ayrı tutuyorum.
 
 Dosya yoksa ilk çalıştırmada oluşuyor. Her yazma işleminde önce `.tmp` dosyasına
 yazılıp sonra `rename` ile asıl dosyanın üzerine taşınıyor; yarım yazılmış dosya

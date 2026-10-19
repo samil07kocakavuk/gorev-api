@@ -6,6 +6,9 @@ Gönderilen ve dönen her şey JSON.
 Hatalı isteklerde `success: false` ve `message` dönüyor. Doğrulama hatasında
 ayrıca `errors` dizisi var.
 
+Görev ve rapor uçları oturum istiyor. Giriş yapınca `gorev.sid` çerezi geliyor,
+sonraki isteklerde bu çerez gönderilmeli. Oturum yoksa `401`.
+
 ## Sağlık
 
 ```
@@ -19,7 +22,87 @@ GET /api/health
   "name": "gorev-api",
   "version": "1.0.0",
   "uptime": 21.78,
-  "timestamp": "2026-10-18T19:21:39.222Z"
+  "timestamp": "2026-10-19T08:21:39.222Z"
+}
+```
+
+## Giriş
+
+### Kayıt
+
+```
+POST /api/auth/register
+```
+
+```json
+{
+  "username": "samil",
+  "password": "123456",
+  "name": "Samil"
+}
+```
+
+`username` 3-30 karakter, `password` en az 6 karakter olmalı. `name` opsiyonel.
+Cevap `201`:
+
+```json
+{
+  "success": true,
+  "message": "Kullanici olusturuldu.",
+  "data": { "id": 1, "username": "samil", "name": "Samil" }
+}
+```
+
+Aynı kullanıcı adı varsa `409`, alanlar eksikse `400`.
+
+### Giriş
+
+```
+POST /api/auth/login
+```
+
+```json
+{ "username": "samil", "password": "123456" }
+```
+
+Cevap `200` ve `Set-Cookie: gorev.sid=...`:
+
+```json
+{
+  "success": true,
+  "message": "Giris yapildi.",
+  "data": { "id": 1, "username": "samil", "name": "Samil" }
+}
+```
+
+Yanlış bilgide `401`:
+
+```json
+{ "success": false, "message": "Kullanici adi veya sifre hatali" }
+```
+
+### Çıkış
+
+```
+POST /api/auth/logout
+```
+
+Oturumu kapatır ve çerezi temizler.
+
+```json
+{ "success": true, "message": "Cikis yapildi." }
+```
+
+### Oturumdaki kullanıcı
+
+```
+GET /api/auth/me
+```
+
+```json
+{
+  "success": true,
+  "data": { "id": 1, "username": "samil", "name": "Samil" }
 }
 ```
 
@@ -106,8 +189,8 @@ Cevap `201`:
     "assignee": "samil",
     "project": "bitirme",
     "dueDate": "2026-10-27",
-    "createdAt": "2026-10-18T20:02:11.000Z",
-    "updatedAt": "2026-10-18T20:02:11.000Z"
+    "createdAt": "2026-10-19T08:02:11.000Z",
+    "updatedAt": "2026-10-19T08:02:11.000Z"
   }
 }
 ```
@@ -117,7 +200,7 @@ Eksik alan:
 ```json
 {
   "success": false,
-  "message": "Gecersiz istek verisi.",
+  "message": "Gecersiz veri",
   "errors": ["title zorunlu"]
 }
 ```
@@ -145,10 +228,12 @@ Yoksa `404`:
 
 ```
 PUT /api/tasks/1
+PATCH /api/tasks/1
 ```
 
-Sadece gönderilen alanlar değişiyor. `id` ve `createdAt` korunuyor,
-`updatedAt` kendiliğinden yenileniyor.
+İkisi de gönderilen alanları güncelliyor. `PUT` genelde tam, `PATCH` kısmi
+güncelleme için kullanılır; burada aynı davranıyorlar. `id` ve `createdAt`
+korunuyor, `updatedAt` kendiliğinden yenileniyor.
 
 ```json
 { "status": "completed" }
@@ -212,7 +297,7 @@ GET /api/reports/summary
     "byPriority": { "high": 2, "medium": 4, "low": 2 },
     "assignees": ["samil", "kerem", "elif"],
     "assigneeCount": 3,
-    "generatedAt": "2026-10-18T20:05:00.000Z"
+    "generatedAt": "2026-10-19T08:05:00.000Z"
   }
 }
 ```
@@ -220,13 +305,16 @@ GET /api/reports/summary
 ## Durum kodları
 
 - `200` listeleme, detay, güncelleme, silme
-- `201` ekleme
+- `201` ekleme, kayıt
 - `400` eksik/geçersiz veri, bozuk JSON
+- `401` giriş yok veya bilgiler yanlış
 - `404` görev veya endpoint yok
+- `409` kullanıcı adı alınmış
 - `413` gövde çok büyük
 - `500` sunucu hatası
 
 ## Denemek için
 
-Postman koleksiyonu: `postman/gorev-api.postman_collection.json`. İçinde tüm
-uçlar, filtre örnekleri ve birkaç hatalı istek var.
+Postman koleksiyonu: `postman/gorev-api.postman_collection.json`. Önce
+`0. Giriş` klasöründeki `Giriş Yap` isteğini çalıştır; çerez sonraki isteklerde
+otomatik gidiyor.

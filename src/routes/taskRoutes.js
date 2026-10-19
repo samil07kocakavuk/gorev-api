@@ -12,6 +12,7 @@ router.get('/', asyncHandler(taskController.listTasks));
 router.post('/', validateCreateTask, asyncHandler(taskController.createTask));
 router.get('/:id', asyncHandler(taskController.getTask));
 router.put('/:id', validateUpdateTask, asyncHandler(taskController.updateTask));
+router.patch('/:id', validateUpdateTask, asyncHandler(taskController.updateTask));
 router.delete('/:id', asyncHandler(taskController.deleteTask));
 
 module.exports = router;

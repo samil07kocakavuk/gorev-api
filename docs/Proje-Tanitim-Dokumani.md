@@ -40,6 +40,16 @@ söylüyor.
 Rapor tarafında üç uç var: tamamlanan görevler, bekleyen görevler ve genel özet.
 Özet ucu durum/öncelik dağılımını ve görev atanan kişileri veriyor.
 
+## Giriş
+
+Görev uçlarını herkese açık bırakmak istemedim. Kayıt, giriş ve çıkış uçları var;
+giriş yapınca `express-session` bir çerez veriyor, görev ve rapor uçları bu oturumu
+arıyor. Şifreleri `scrypt` ile hashleyip `data/users.json` içinde tutuyorum, düz
+şifre yok. Hazır kullanıcı `samil` / `123456`.
+
+Oturumlar sunucu belleğinde duruyor; sunucu yeniden başlarsa tekrar giriş yapmak
+gerekiyor.
+
 ## Nasıl kurguladım
 
 Kod tek dosyada toplanmasın diye katmanlara ayırdım. Rotalar isteği controller'a
@@ -47,9 +57,12 @@ veriyor, controller service'i çağırıyor, service de JSON dosyasıyla konuşu
 Middleware'ler ayrı duruyor. Hata yakalama tek yerde: controller içinde
 try/catch yazmıyorum, `asyncHandler` hatayı merkezi error handler'a taşıyor.
 
+`npm test` ile 25 test var. Testler geçici dosyalarla çalışıyor, `data/` içine
+dokunmuyor.
+
 ## Bilerek yapmadıklarım
 
-- Kimlik doğrulama yok. Tek kişi kullandığı için gerek duymadım.
 - Kullanıcı ve proje ayrı tablo değil; `assignee` ve `project` düz metin.
 - Veritabanı yok, JSON dosyası var. Aynı anda birden fazla sunucu aynı dosyaya
   yazarsa kuyruk yetmez; tek process için tasarladım.
+- Session için ayrı bir store yok, `express-session`'ın bellek store'u kullanılıyor.

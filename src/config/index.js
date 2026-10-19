@@ -5,9 +5,13 @@ module.exports = {
   dataFile:
     process.env.DATA_FILE ||
     path.join(__dirname, '..', '..', 'data', 'tasks.json'),
+  usersFile:
+    process.env.USERS_FILE ||
+    path.join(__dirname, '..', '..', 'data', 'users.json'),
   logFile:
     process.env.LOG_FILE ||
     path.join(__dirname, '..', '..', 'logs', 'access.log'),
+  sessionSecret: process.env.SESSION_SECRET || 'gorev-api-dev-secret',
   api: {
     name: 'gorev-api',
     version: '1.0.0',
