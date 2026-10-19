@@ -145,15 +145,15 @@ Aşağıdaki görüntüler `screenshots/` klasörüne eklenecek.
 | 4 | Güncelleme | 200 OK |
 | 5 | Silme | 200 OK |
 
-![Ekleme](screenshots/1-ekle.png)
+![Ekleme](../screenshots/1-ekle.png)
 
-![Listeleme](screenshots/2-listele.png)
+![Listeleme](../screenshots/2-listele.png)
 
-![Detay](screenshots/3-detay.png)
+![Detay](../screenshots/3-detay.png)
 
-![Güncelleme](screenshots/4-guncelle.png)
+![Güncelleme](../screenshots/4-guncelle.png)
 
-![Silme](screenshots/5-sil.png)
+![Silme](../screenshots/5-sil.png)
 
 ## 9. Yönerge Gereksinimleri
 
