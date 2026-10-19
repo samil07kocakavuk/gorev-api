@@ -1,7 +1,6 @@
 # Teslim Raporu — görev-api
 
-**Öğrenci:** Samil Kocakavuk
-**Öğrenci No:** [öğrenci numarası]
+**Öğrenci:** İsmail Şamil Kocakavuk
 **Ders:** Backend Geliştirme
 **Teslim Tarihi:** 19.10.2026
 **GitHub:** https://github.com/samil07kocakavuk/gorev-api
