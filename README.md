@@ -23,6 +23,16 @@ giriş yapmak gerekiyor.
 npm install
 ```
 
+Ayarları `.env` dosyasından okumak istersen örneği kopyala:
+
+```bash
+# PowerShell
+Copy-Item .env.example .env
+```
+
+`PORT`, `SESSION_SECRET` ve dosya yolları buradan değiştirilebiliyor. `.env`
+git'e eklenmiyor.
+
 ## Çalıştırma
 
 ```bash
